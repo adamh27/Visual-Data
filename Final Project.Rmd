@@ -1,0 +1,237 @@
+```{r}
+location="https://github.com/adamh27/Visual-Data/raw/main/"
+file="Median%20Income.csv"
+
+linkToFile=paste0(location,file)
+```
+
+```{r}
+library(foreign)
+
+median_income=read.csv(linkToFile)
+```
+
+```{r}
+str(median_income)
+```
+
+```{r}
+library(foreign) #unknown library 
+
+median_income=read.csv(linkToFile) #load command to read data set in R
+
+```
+```{r}
+str(median_income) #view data frame to ensure proper import 
+```
+```{r}
+complete.cases(median_income) #Identify the NA values with T/F verification 
+
+#2520 Omitted entries
+```
+```{r}
+which(complete.cases(median_income)) #Shows which row values have complete values
+```
+```{r}
+which(!complete.cases(median_income)) #Which rows have the NA values
+```
+```{r}
+na_vec <- which(!complete.cases(median_income)) #Storing the NA variables here
+na_vec #View the new na_vec
+```
+```{r}
+No_NA_Median_Income <- median_income[-na_vec,] #Removing the NA data from the original data set and creating a new data set as N0_Na...
+
+#1,491 obs removed 
+```
+
+```{r}
+No_NA_Median_Income$Data <- as.numeric(as.character(No_NA_Median_Income$Data)) 
+```
+
+```{r}
+str(No_NA_Median_Income) #Checking if numeric change occured
+```
+
+```{r}
+#now I want to transform the data from a pure count into percents
+head(No_NA_Median_Income$Race,20)
+```
+```{r}
+#we want to build a table and transform the data to get percents
+
+absoluteT=table(No_NA_Median_Income$Race,
+                exclude = "nothing")
+
+absoluteT
+```
+
+```{r}
+prop.table(absoluteT)
+```
+```{r}
+#want to transform the data to be a traditional percentage value
+ToPlot=prop.table(absoluteT)*100
+
+ToPlot
+```
+
+```{r}
+# transform it into a data frame
+
+tableFreq=as.data.frame(ToPlot)
+
+names(tableFreq)=c("Race","pct")
+
+tableFreq
+```
+
+```{r}
+library(ggplot2)
+
+```
+```{r}
+base= ggplot(data = tableFreq, 
+             aes(x = Race,
+                 y = pct)) 
+```
+
+```{r}
+#Creating bar chart using the base instructions created in the previous chunk
+plot1 = base + geom_bar(fill ="grey",
+                        stat = 'identity') 
+#using the color black to make the chart readable
+
+# I need this to see the result:
+plot1
+
+```
+
+```{r}
+#Creating titles and labels for the the chart
+titleText="Percent of Each Racial Group"
+sourceText='Source: American Community Survey'
+
+plot2 = plot1 + labs(title=titleText,
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+plot2
+```
+
+```{r}
+#changing the theme to make the chart more readable
+plot3=plot2+ theme_classic()
+plot3
+```
+
+```{r}
+#Want to change the limits/breaks to put the individual bars in perspective
+library(scales) # for "unit_format""
+
+# customize Y axis
+plot4 = plot3 + scale_y_continuous(breaks=c(0,10, 20),
+                                   limits = c(0, 20), 
+                                   labels=unit_format(suffix = '%')) 
+plot4
+
+```
+
+```{r}
+plot5 = plot4 + theme(plot.caption = element_text(hjust = 0), 
+                      plot.title = element_text(hjust = 0.5))
+plot5
+
+```
+
+
+```{r}
+#I want to add a line in the chart at the average, to see which racial groups are under and over represented in the data set 
+
+plot6 = plot5 + geom_hline(yintercept = 14, #the average
+                           linetype="dashed", 
+                           size=1.5, #thickness
+                           alpha=0.5) #transparency
+plot6
+```
+
+```{r}
+#I want to tilt the racial titles to make the chart redable in a non expanded format
+
+```
+
+```{r}
+#Lastly, I want to add the percentages for each bar to allow for better comparisons
+
+LABELS=paste0(round(tableFreq$pct,2), '%')
+
+plot7 = plot6 + geom_text(vjust=-1, #adjust the height
+                          size = 4,#font face = "bold",
+                          aes(y = pct ,
+                              label = LABELS))
+plot7 #final non-interactive plot
+
+
+```
+
+
+```{r}
+#make it interactive
+library(plotly)
+
+ggplotly(plot7)
+```
+
+```{r}
+#Now we are interested in udnerstanding how income differs across racial groups, this will be a CAT- NUM Bivariate visualization 
+
+names(No_NA_Median_Income)
+```
+
+```{r}
+summary(No_NA_Median_Income$Data)
+```
+
+```{r}
+# looking at how out of place the max is, looking at the top 20 earners. 
+
+library(magrittr) # for %>%
+No_NA_Median_Income[order(-No_NA_Median_Income$Data),c('Race','Data')]%>%head(20)
+```
+
+```{r}
+#Lets get the average of each group
+aggregate(data=No_NA_Median_Income, Data~Race,median)
+```
+
+```{r}
+#A box plot is an excellent way to visualize income data between the different groups 
+library(ggplot2)
+box=ggplot(data=No_NA_Median_Income,
+            aes(x=Race,
+                y=Data))
+
+box + geom_boxplot()
+```
+
+```{r}
+#Now let's add some titlesw
+
+titleText="Income by Racial Group"
+sourceText='Source: American Community Survey'
+
+box2 = box + geom_boxplot() + labs(title=titleText,
+                     x =NULL, 
+                     y = NULL,
+                     caption = sourceText)
+box2
+```
+
+```{r}
+#Now lets make it interactive
+
+library(plotly)
+
+ggplotly(box2)
+```
+
